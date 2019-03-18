@@ -276,19 +276,14 @@ zend_op_array *phpdbg_compile_file(zend_file_handle *file, int type) {
 	if (ret == NULL) {
 		efree(data.buf);
 		efree(dataptr);
-
-		fake.opened_path = NULL;
-		zend_file_handle_dtor(&fake);
-
-		return NULL;
+	} else {
+		dataptr = erealloc(dataptr, sizeof(phpdbg_file_source) + sizeof(uint32_t) * line);
+		zend_hash_add_ptr(&PHPDBG_G(file_sources), ret->filename, dataptr);
+		phpdbg_resolve_pending_file_break(ZSTR_VAL(ret->filename));
 	}
 
-	dataptr = erealloc(dataptr, sizeof(phpdbg_file_source) + sizeof(uint32_t) * line);
-	zend_hash_add_ptr(&PHPDBG_G(file_sources), ret->filename, dataptr);
-	phpdbg_resolve_pending_file_break(ZSTR_VAL(ret->filename));
-
-	fake.opened_path = NULL;
-	zend_file_handle_dtor(&fake);
+	file->opened_path = NULL;
+	zend_file_handle_dtor(file);
 
 	return ret;
 }
